@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  <title>Google Maps JavaScript API v3 Example: Fusion Tables Layer</title>
+  <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+      html { height: 90% }
+      body { height: 90%; margin: 0; padding: 0 }
+      #map_canvas { width: 500px;height: 400px; }
+    </style>
+  <script type="text/javascript" 
+      src="http://maps.googleapis.com/maps/api/js?sensor=false">
+  </script>
+  
+  
+  <script type="text/javascript">
+  
+ 
+  
+  function initialize() {
+
+      var peru = new google.maps.LatLng(-12.491991, -76.72588);
+      var tableId = 3097901;
+      var locationColumn = 'geometry';
+    
+      var tableKmlId = 3097904;
+    
+      map = new google.maps.Map(document.getElementById('map_canvas'), {
+          center: peru,
+          zoom: 8,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+      });
+ 
+      var layer2 = new google.maps.FusionTablesLayer();
+   
+      var layer2Options = {
+        styles: [{
+  
+    	    polygonOptions: {
+    	        fillColor: "#00ff00",
+    		    strokeColor: "#fffff00", 
+    	        strokeWeight: 2,
+    	        strokeOpacity : 0.5
+    		}
+    	}],
+    	map:map,
+    	query: {
+        	select: 'geometry',
+        	from: tableKmlId
+        }
+    	
+    }
+    layer2.setOptions(layer2Options);
+    
+    
+    
+ 
+ 
+    
+    google.maps.event.addListener(map, "rightclick", function(event) {
+        var lat = event.latLng.lat();
+        var lng = event.latLng.lng();
+        // populate yor box/field with lat, lng
+         alert("Lat1=" + lat + "; Lng1=" + lng);
+        
+        /*var point = new google.maps.LatLng(lat, lng);
+        var polygon = new google.maps.Polygon(layer2Options);
+        
+        if (polygon.Contains(point)) {
+             // populate yor box/field with lat, lng
+             alert("Lat=" + lat + "; Lng=" + lng);
+        }*/
+    
+     
+    });
+ 
+ google.maps.event.addDomListener(document.getElementById('empresa'),
+	          'change', function() {
+	          updateMap(layer2, tableKmlId, locationColumn);
+    });
+      var layer = new google.maps.FusionTablesLayer();
+      var layerOptions = {
+         
+        map: map,
+        query: {
+              select: locationColumn,
+              from: tableId
+           }
+      }
+      
+      layer.setOptions(layerOptions); 
+      
+      google.maps.event.addDomListener(document.getElementById('empresa'),
+	          'change', function() {
+	          updateMap(layer, tableId, locationColumn);
+      });
+  
+     
+  
+      google.maps.event.addDomListener(document.getElementById('search'),
+	          'click', function() {
+	          changeMap(layer, tableId, locationColumn);
+      });
+    
+     
+      
+ 
+}
+  
+//Update the query sent to the Fusion Table Layer based on
+  // the user selection in the select menu
+  function updateMap(layer, tableId, locationColumn) {
+	  var empresa = document.getElementById('empresa').value;
+	  if (empresa) {
+          layer.setOptions({
+            query: {
+              select: locationColumn,
+              from: tableId,
+              where: "empresa = '" + empresa + "'"
+            }
+           
+          });
+        } else {
+	  layer.setOptions({
+          query: {
+            select: locationColumn,
+            from: tableId
+          }
+          
+        });
+     }
+  }
+
+   function changeMap(layer, tableId, locationColumn) {
+	  var searchString = document.getElementById('search-string').value.replace(/'/g, "\\'");
+	 
+	  
+	   layer.setOptions({
+                  query: {
+                    select: locationColumn,
+                    from: tableId,
+                    where: "SEMESTRE= '" + searchString +"'" 
+                  }
+                });
+	}
+
+    google.maps.event.addDomListener(window, 'load', initialize);
+  
+  
+   
+  
+  
+  
+  google.maps.Polygon.prototype.Contains = function(point) {
+        // ray casting alogrithm http://rosettacode.org/wiki/Ray-casting_algorithm
+        var crossings = 0,
+            path = this.getPath();
+
+        // for each edge
+        for (var i=0; i < path.getLength(); i++) {
+            var a = path.getAt(i),
+                j = i + 1;
+            if (j >= path.getLength()) {
+                j = 0;
+            }
+            var b = path.getAt(j);
+            if (rayCrossesSegment(point, a, b)) {
+                crossings++;
+            }
+        }
+
+        // odd number of crossings?
+        return (crossings % 2 == 1);
+
+        function rayCrossesSegment(point, a, b) {
+            var px = point.lng(),
+                py = point.lat(),
+                ax = a.lng(),
+                ay = a.lat(),
+                bx = b.lng(),
+                by = b.lat();
+            if (ay > by) {
+                ax = b.lng();
+                ay = b.lat();
+                bx = a.lng();
+                by = a.lat();
+            }
+            // alter longitude to cater for 180 degree crossings
+            if (px < 0) { px += 360 };
+            if (ax < 0) { ax += 360 };
+            if (bx < 0) { bx += 360 };
+
+            if (py == ay || py == by) py += 0.00000001;
+            if ((py > by || py < ay) || (px > Math.max(ax, bx))) return false;
+            if (px < Math.min(ax, bx)) return true;
+
+            var red = (ax != bx) ? ((by - ay) / (bx - ax)) : Infinity;
+            var blue = (ax != px) ? ((py - ay) / (px - ax)) : Infinity;
+            return (blue >= red);
+
+        }
+
+     };
+  
+  </script>
+ </head>
+ <body>
+  
+  <div id="map_canvas" style="width:90%; height:90%"></div>
+  <label>Empresa</label>
+  <select id="empresa">
+      <option value="">--Select--</option>
+      <option value="REP">REP</option>
+      <option value="KLP">KLP</option>
+      <option value="ENS">ENS</option>
+   </select>
+   
+  <div style="margin-top: 10px;">
+  <label>Semestre </label>
+  <input type="text" id="search-string" />
+  <input type="button"  value="Search" id ="search"" />
+</div> 
+  </body>
+</html>
