@@ -10,16 +10,15 @@
       body { height: 90%; margin: 0; padding: 0 }
       #map_canvas { width: 500px;height: 400px; }
     </style>
-  <script type="text/javascript" 
-      src="http://maps.googleapis.com/maps/api/js?sensor=false">
+  <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false">
   </script>
-  
+   <script type="text/javascript" src="http://www.google.com/jsapi"></script>
   
   <script type="text/javascript">
+  google.load('visualization', '1');
   
- 
   
-  function initialize() {
+  function initialize(){
 
       var peru = new google.maps.LatLng(-12.491991, -76.72588);
       var tableId = 3109998;
@@ -27,12 +26,20 @@
     
       var tableKmlId = 3110406;
     
+      var geocoder = new google.maps.Geocoder();
+      var infoWindow = new google.maps.InfoWindow();
+      
       map = new google.maps.Map(document.getElementById('map_canvas'), {
           center: peru,
           zoom: 8,
           mapTypeId: google.maps.MapTypeId.ROADMAP
       });
  
+      var marker = new google.maps.Marker({
+          map: map,
+          animation: google.maps.Animation.DROP
+        });
+      
       var layer2 = new google.maps.FusionTablesLayer();
    
       var layer2Options = {
@@ -55,18 +62,15 @@
     layer2.setOptions(layer2Options);
     
     
-    
- 
- 
-    
-    google.maps.event.addListener(map, "rightclick", function(event) {
+   
+    google.maps.event.addListener(layer2, "click", function(event) {
         var lat = event.latLng.lat();
         var lng = event.latLng.lng();
         // populate yor box/field with lat, lng
-         alert("Lat1=" + lat + "; Lng1=" + lng);
+        // alert("Lat1=" + lat + "; Lng1=" + lng);
         
-        /*var point = new google.maps.LatLng(lat, lng);
-        var polygon = new google.maps.Polygon(layer2Options);
+        var point = new google.maps.LatLng(lat, lng);
+        /*var polygon = new google.maps.Polygon(layer2Options);
         
         if (polygon.Contains(point)) {
              // populate yor box/field with lat, lng
@@ -76,21 +80,28 @@
      
     });
  
- google.maps.event.addDomListener(document.getElementById('empresa'),
+    google.maps.event.addDomListener(document.getElementById('empresa'),
 	          'change', function() {
 	          updateMap(layer2, tableKmlId, locationColumn);
     });
-      var layer = new google.maps.FusionTablesLayer();
-      var layerOptions = {
+    
+    
+    
+    
+    
+    
+    
+    var layer = new google.maps.FusionTablesLayer();
+    var layerOptions = {
          
         map: map,
         query: {
               select: locationColumn,
               from: tableId
            }
-      }
+    }
       
-      layer.setOptions(layerOptions); 
+    layer.setOptions(layerOptions); 
       
       google.maps.event.addDomListener(document.getElementById('empresa'),
 	          'change', function() {
@@ -104,8 +115,63 @@
 	          changeMap(layer, tableId, locationColumn);
       });
     
-     
       
+      var geocodeAddress = function() {
+          var enteredAddress = document.getElementById('address').value;
+          geocoder.geocode({
+            address: enteredAddress
+          }, function(results, status) {
+            if (status == google.maps.GeocoderStatus.OK) {
+
+              coordinate = results[0].geometry.location;
+
+              marker.setAnimation(google.maps.Animation.DROP);
+              marker.setPosition(coordinate);
+
+              // Note: this query is approximate to 0.001 meters!
+              var queryList = [];
+              queryList.push("SELECT 'name' FROM ");
+              queryList.push(tableKmlId);
+              queryList.push(" WHERE ");
+              queryList.push("ST_INTERSECTS('geometry', ");
+              queryList.push('CIRCLE(LATLNG(');
+              queryList.push(coordinate.lat());
+              queryList.push(',');
+              queryList.push(coordinate.lng());
+              queryList.push('), 0.001))');
+
+              var query = encodeURIComponent(queryList.join(''));
+              var gvizQuery = new google.visualization.Query(
+                  'http://www.google.com/fusiontables/gvizdata?tq=' + query);
+
+              gvizQuery.send(function(response) {
+                var datatable = response.getDataTable();
+                var header = 'No hay resultados';
+                var content = 'Fuera de zona de concesión';
+                if (datatable && datatable.getNumberOfRows()) {
+                  header = datatable.getValue(0, 0);
+                  content = datatable.getValue(0, 1);
+                }
+
+                infoWindow.setContent('<h3>' + header + '</h3>' +
+                    '<p>' + content + '</p>');
+                infoWindow.setPosition(coordinate);
+                infoWindow.open(map);
+              });
+
+            } else {
+              alert('Error geocoding address');
+            }
+          });
+        };
+      
+     // On button click or enter key press, geocode the address
+      google.maps.event.addDomListener(document.getElementById('go'),'click', geocodeAddress);
+      google.maps.event.addDomListener(window, 'keypress', function(e) {
+          if (e.keyCode == 13) {
+            geocodeAddress();
+          }
+        });
  
 }
   
@@ -141,7 +207,7 @@
                   query: {
                     select: locationColumn,
                     from: tableId,
-                    where: "SEMESTRE= '" + searchString +"'" 
+                    where: "semestre= '" + searchString +"'" 
                   }
                 });
 	}
@@ -221,6 +287,9 @@
   <label>Semestre </label>
   <input type="text" id="search-string" />
   <input type="button"  value="Search" id ="search"" />
+   <input type="text" value="Parque Metropolitano Paul Paulet
+Peru" id="address">
+    <input type="button" id="go" value="Go">
 </div> 
   </body>
 </html>
