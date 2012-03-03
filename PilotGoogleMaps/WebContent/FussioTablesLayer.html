@@ -149,8 +149,11 @@
                 var header = 'No hay resultados';
                 var content = 'Fuera de zona de concesión';
                 if (datatable && datatable.getNumberOfRows()) {
-                  header = datatable.getValue(0, 0);
-                  content = datatable.getValue(0, 1);
+                  //header = datatable.getValue(0, 0);
+                  //content = datatable.getValue(0, 1);
+                  
+                  header = 'Hola';
+                  content = 'Monse';
                 }
 
                 infoWindow.setContent('<h3>' + header + '</h3>' +
