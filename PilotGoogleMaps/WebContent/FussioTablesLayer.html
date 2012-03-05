@@ -40,6 +40,12 @@
           animation: google.maps.Animation.DROP
         });
       
+      
+      
+     
+      
+      
+      
       var layer2 = new google.maps.FusionTablesLayer();
    
       var layer2Options = {
@@ -102,7 +108,9 @@
     }
       
     layer.setOptions(layerOptions); 
+    
       
+    
       google.maps.event.addDomListener(document.getElementById('empresa'),
 	          'change', function() {
 	          updateMap(layer, tableId, locationColumn);
@@ -115,8 +123,50 @@
 	          changeMap(layer, tableId, locationColumn);
       });
     
+     /* google.maps.event.addListener(layer, 'click', function(event) {
+    	  event.infoWindowHtml = "<b>Nombre:</b> " + event.row['name'].value + "<br/>" 
+    	  event.infoWindowHtml += "Empresa: " + event.row['empresa'].value + "<br/>"; 
+         infoWindow.setContent(event.infoWindowHtml);
+         
+         infoWindow.open(map); 
+      });*/
       
-      var geocodeAddress = function() {
+     
+		//ib.open(map);
+		
+		//google.maps.event.addListener(layer, "click", function () {
+			 var boxText = document.createElement("div");
+				boxText.style.cssText = "border: 1px solid black; margin-top: 8px; background: yellow; padding: 5px;";
+				boxText.innerHTML = "City Hall, Sechelt<br>British Columbia<br>Canada";
+
+				var myOptions = {
+					 content: boxText
+					,disableAutoPan: false
+					,maxWidth: 0
+					,pixelOffset: new google.maps.Size(-140, 0)
+					,zIndex: null
+					,boxStyle: { 
+					  background: "url('tipbox.gif') no-repeat"
+					  ,opacity: 0.75
+					  ,width: "280px"
+					 }
+					,closeBoxMargin: "10px 2px 2px 2px"
+					,closeBoxURL: "http://www.google.com/intl/en_us/mapfiles/close.gif"
+					,infoBoxClearance: new google.maps.Size(1, 1)
+					,isHidden: false
+					,pane: "floatPane"
+					,enableEventPropagation: false
+				};
+
+				var ib = new InfoBox(myOptions);
+			    ib.open(map);
+			
+		//});
+
+		
+      
+      
+    /*  var geocodeAddress = function() {
           var enteredAddress = document.getElementById('address').value;
           var autocomplete = new google.maps.places.Autocomplete(enteredAddress); 
           autocomplete.bindTo('bounds', map); 
@@ -214,7 +264,10 @@
             }
             
           });
-        };
+        };*/
+        
+        
+        
       
      // On button click or enter key press, geocode the address
       google.maps.event.addDomListener(document.getElementById('go'),'click', geocodeAddress);
@@ -271,24 +324,22 @@
  </head>
  <body>
   
-  <div id="map_canvas" style="width:90%; height:90%"></div>
-  <label>Empresa</label>
-  <select id="empresa">
-      <option value="">--Select--</option>
-      <option value="REP">REP</option>
-      <option value="KLP">KLP</option>
-      <option value="ENS">ENS</option>
-   </select>
+       <div id="map_canvas" style="width:90%; height:90%"></div>
+       <label>Empresa</label>
+       <select id="empresa" onchange="drawTable();">
+           <option value="">--Select--</option>
+           <option value="REP">REP</option>
+           <option value="KLP">KLP</option>
+           <option value="ENS">ENS</option>
+       </select>
    
-  <div style="margin-top: 10px;">
-  <label>Semestre </label>
-  <input type="text" id="search-string" />
-  <input type="button"  value="Search" id ="search"" />
-  <input type="text" value="Parque Metropolitano Paul Paulet Peru" id="address">
-  <input type="button" id="go" value="Go">
-  <input type='text' id='markerLat' value='' />
-  <input type='text' id='markerLng' value='' />
-  <input type="button" id="goLatLng" value="LatLng">
-</div> 
+       <div style="margin-top: 10px;">
+          <label>Semestre </label>
+          <input type="text" id="search-string" />
+          <input type="button"  value="Search" id ="search"" />
+          <input type="text" value="" id="address">
+          <input type="button" id="go" value="Go">
+      </div> 
+     
   </body>
 </html>
