@@ -118,6 +118,7 @@
       
       var geocodeAddress = function() {
           var enteredAddress = document.getElementById('address').value;
+         
           geocoder.geocode({
             address: enteredAddress
           }, function(results, status) {
@@ -163,8 +164,50 @@
               });
 
             } else {
-              alert('Error geocoding address');
+              
+              var coordinate = new google.maps.LatLng(-12.294385,-76.742249);
+              
+
+              marker.setAnimation(google.maps.Animation.DROP);
+              marker.setPosition(coordinate);
+
+              // Note: this query is approximate to 0.001 meters!
+              var queryList = [];
+              queryList.push("SELECT 'name' FROM ");
+              queryList.push(tableKmlId);
+              queryList.push(" WHERE ");
+              queryList.push("ST_INTERSECTS('geometry', ");
+              queryList.push('CIRCLE(LATLNG(');
+              queryList.push(coordinate.lat());
+              queryList.push(',');
+              queryList.push(coordinate.lng());
+              queryList.push('), 0.001))');
+
+              var query = encodeURIComponent(queryList.join(''));
+              var gvizQuery = new google.visualization.Query(
+                  'http://www.google.com/fusiontables/gvizdata?tq=' + query);
+
+              gvizQuery.send(function(response) {
+                var datatable = response.getDataTable();
+                var header = 'No hay resultados';
+                var content = 'Fuera de zona de concesión';
+                if (datatable && datatable.getNumberOfRows()) {
+                  //header = datatable.getValue(0, 0);
+                  //content = datatable.getValue(0, 1);
+                  
+                  header = 'Hola';
+                  content = 'Monse';
+                }
+
+                infoWindow.setContent('<h3>' + header + '</h3>' +
+                    '<p>' + content + '</p>');
+                infoWindow.setPosition(coordinate);
+                infoWindow.open(map);
+              });
+              
+              
             }
+            
           });
         };
       
@@ -175,7 +218,7 @@
             geocodeAddress();
           }
         });
- 
+
 }
   
 //Update the query sent to the Fusion Table Layer based on
@@ -238,6 +281,9 @@
   <input type="button"  value="Search" id ="search"" />
   <input type="text" value="Parque Metropolitano Paul Paulet Peru" id="address">
   <input type="button" id="go" value="Go">
+  <input type='text' id='markerLat' value='' />
+  <input type='text' id='markerLng' value='' />
+  <input type="button" id="goLatLng" value="LatLng">
 </div> 
   </body>
 </html>
