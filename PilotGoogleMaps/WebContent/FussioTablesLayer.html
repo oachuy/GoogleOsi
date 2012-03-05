@@ -118,7 +118,10 @@
       
       var geocodeAddress = function() {
           var enteredAddress = document.getElementById('address').value;
-         
+          var autocomplete = new google.maps.places.Autocomplete(enteredAddress); 
+          autocomplete.bindTo('bounds', map); 
+          autocomplete.setTypes(['geocode']); 
+          
           geocoder.geocode({
             address: enteredAddress
           }, function(results, status) {
@@ -165,6 +168,8 @@
 
             } else {
               
+            	
+              	
               var coordinate = new google.maps.LatLng(-12.294385,-76.742249);
               
 
