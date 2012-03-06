@@ -13,9 +13,10 @@
   <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
   <script type="text/javascript" src="http://www.google.com/jsapi"></script>
   <script type="text/javascript" src="infobox.js"></script>
+  <script type="text/javascript" src="http://geoxml3.googlecode.com/svn/branches/polys/geoxml3.js"></script>
   
   <script type="text/javascript">
-  google.load('visualization', '1');
+  google.load('visualization', '1',{'packages':['corechart', 'table', 'geomap']});
   
   var map;
   
@@ -32,52 +33,14 @@
       
       map = new google.maps.Map(document.getElementById('map_canvas'), {
           center: peru,
-          zoom: 14,
+          zoom: 18,
           mapTypeId: google.maps.MapTypeId.ROADMAP
       });
       
       
-      var queryText = encodeURIComponent("SELECT geometry FROM 3110406");
-      var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
+      var query = "SELECT geometry FROM " + tableKmlId;
       
-      var coordinates = [];
-     
-      query.send(function(response) {
-   	   
-      var numRows = response.getDataTable().getNumberOfRows();
-
-  
-      
-          for(i = 0; i < numRows; i++) {
-             
-        	  var data = response.getDataTable().getValue(i, 0);
-              
-        	  var cvector = data.split(",");
-        	  
-        	  var cx = cvector[0].split("<coordinates>");
-        	  var x = cx[1];
-        	  var y = cvector[1];
-        	  //alert (x + ' '+ y);
-        	  
-        	 
-        	  
-        	  
-              coordinates.push(new google.maps.LatLng(y, x));
-           }
-        
-      
-       var bounds = new google.maps.LatLngBounds();
-      
-     
-       
-       for (var i = 0; i < coordinates.length; i++) {
-           bounds.extend(coordinates[i]);
-       }
-       
-       
-       map.fitBounds(bounds);
-      
-      });
+      zoom2query(query);
        
       
        
@@ -347,9 +310,12 @@
   // the user selection in the select menu
   function updateMap(layer, tableId, locationColumn) {
 	  var empresa = document.getElementById('empresa').value;
-	  
-	  
-	   
+
+      
+      var query = "SELECT geometry FROM " + tableId + " WHERE 'empresa' = '" + empresa+ "'";
+     
+      zoom2query(query);
+          
 	  
 	  
 	  
@@ -372,52 +338,7 @@
         });
      }
 	  
-	 
-	  var queryText = encodeURIComponent("SELECT geometry, empresa FROM 3110406 WHERE empresa = '"+ empresa +"'");
-      var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
-      
-      var coordinates = [];
-     
-      query.send(function(response) {
-   	   
-      var numRows = response.getDataTable().getNumberOfRows();
-
   
-      
-          for(i = 0; i < numRows; i++) {
-             
-        	  var data = response.getDataTable().getValue(i, 0);
-              
-        	  var cvector = data.split(",");
-        	  
-        	  var cx = cvector[0].split("<coordinates>");
-        	  var x = cx[1];
-        	  var y = cvector[1];
-        	  
-        	  
-        	 
-        	  
-        	  
-              coordinates.push(new google.maps.LatLng(y, x));
-           }
-        
-      
-       var bounds = new google.maps.LatLngBounds();
-      
-     
-       
-       for (var i = 0; i < coordinates.length; i++) {
-           bounds.extend(coordinates[i]);
-       }
-       
-       
-       map.fitBounds(bounds);
-      
-      });
-	  
-	  
-	  
-	  
   }
 
    function changeMap(layer, tableId, locationColumn) {
@@ -438,6 +359,63 @@
 	  
    }
    
+   
+   function zoom2query(query) {
+	// zoom and center map on query results
+	  //set the query using the parameter
+	  var queryText = encodeURIComponent(query);
+	  var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
+	  
+
+	  //set the callback function
+	  query.send(zoomTo);
+
+	}
+   
+   
+   function zoomTo(response) {
+	   if (!response) {
+	     alert('no response');
+	     return;
+	   }
+	   if (response.isError()) {
+	     alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+	     return;
+	   } 
+	   
+	   
+	   var numRows = response.getDataTable().getNumberOfRows();
+       var numCols = response.getDataTable().getNumberOfColumns();
+
+   
+      
+   
+       var unionBounds = null;
+  
+       var kml;
+       
+       for(i = 0; i < numRows; i++) {
+     	  
+ 	      kml =  response.getDataTable().getValue(i,0);
+ 	      
+ 	      var geoXml = new geoXML3.parser({
+               map: map,
+               zoom: false
+           });
+ 	      
+ 	  
+ 	      
+ 	      geoXml.parseKmlString("<Placemark>"+kml+"</Placemark>");
+
+ 	      geoXml.docs[0].gpolygons[0].setMap(null);
+ 	      
+ 	     
+ 	      if (!unionBounds) unionBounds = geoXml.docs[0].gpolygons[0].bounds;
+ 	      else unionBounds.union(geoXml.docs[0].gpolygons[0].bounds);
+        }
+       map.fitBounds(unionBounds);
+	   }
+
    
    
    google.maps.event.addDomListener(window, 'load', initialize);
