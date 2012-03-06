@@ -10,13 +10,14 @@
       body { height: 90%; margin: 0; padding: 0 }
       #map_canvas { width: 500px;height: 400px; }
     </style>
-  <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false">
-  </script>
-   <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="infobox.js"></script>
   
   <script type="text/javascript">
   google.load('visualization', '1');
   
+  var map;
   
   function initialize(){
 
@@ -31,7 +32,7 @@
       
       map = new google.maps.Map(document.getElementById('map_canvas'), {
           center: peru,
-          zoom: 8,
+          zoom: 14,
           mapTypeId: google.maps.MapTypeId.ROADMAP
       });
  
@@ -101,6 +102,7 @@
     var layerOptions = {
          
         map: map,
+        suppressInfoWindows: true,
         query: {
               select: locationColumn,
               from: tableId
@@ -132,12 +134,14 @@
       });*/
       
      
-		//ib.open(map);
+	
+       
 		
-		//google.maps.event.addListener(layer, "click", function () {
+		
+		google.maps.event.addListener(layer, "click", function (event) {
 			 var boxText = document.createElement("div");
 				boxText.style.cssText = "border: 1px solid black; margin-top: 8px; background: yellow; padding: 5px;";
-				boxText.innerHTML = "City Hall, Sechelt<br>British Columbia<br>Canada";
+				boxText.innerHTML = "Datos<br>Datos<br>";
 
 				var myOptions = {
 					 content: boxText
@@ -157,11 +161,25 @@
 					,pane: "floatPane"
 					,enableEventPropagation: false
 				};
-
-				var ib = new InfoBox(myOptions);
-			    ib.open(map);
 			
-		//});
+			boxText.innerHTML += "<b>Nombre:</b> " + event.row['sed'].value + "<br/>"
+			boxText.innerHTML += "Empresa: " + event.row['empresa'].value + "<br/>";
+			
+			var ib = new InfoBox(myOptions);
+			
+			var marker = new google.maps.Marker({
+				map: map,
+				draggable: false,
+				position: event.latLng,
+				visible: false
+			});
+		
+			ib.open(map,marker);
+			
+		});
+
+		
+		//ib.open(map);
 
 		
       
@@ -270,12 +288,12 @@
         
       
      // On button click or enter key press, geocode the address
-      google.maps.event.addDomListener(document.getElementById('go'),'click', geocodeAddress);
+      /*google.maps.event.addDomListener(document.getElementById('go'),'click', geocodeAddress);
       google.maps.event.addDomListener(window, 'keypress', function(e) {
           if (e.keyCode == 13) {
             geocodeAddress();
           }
-        });
+        });*/
 
 }
   
@@ -283,6 +301,36 @@
   // the user selection in the select menu
   function updateMap(layer, tableId, locationColumn) {
 	  var empresa = document.getElementById('empresa').value;
+	  
+	  
+	  var queryText = encodeURIComponent("SELECT 'geometry' FROM 3109998");
+      var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
+      
+      var coordinates = [];
+      query.send(function(response) {
+   	   
+          var numRows = response.getDataTable().getNumberOfRows();
+
+          //create the list of lat/long coordinates
+         
+          for(i = 0; i < numRows; i++) {
+             
+               // var lat = response.getDataTable().getValue(i, 0);
+               // var lng = response.getDataTable().getValue(i, 1);
+               var geocoord = response.getDataTable().getValue(i, 0);
+               coordinates.push(geocoord);
+           }
+       }); 
+      
+       var bounds = new google.maps.LatLngBounds();
+      
+       for (var i = 0; i < coordinates.length; i++) {
+           bounds.extend(coordinates[i]);
+       }
+       this.map.fitBounds(bounds); 
+	  
+	  
+	  
 	  if (empresa) {
           layer.setOptions({
             query: {
@@ -301,9 +349,13 @@
           
         });
      }
+	  
+	  
+	  
   }
 
    function changeMap(layer, tableId, locationColumn) {
+	   
 	  var searchString = document.getElementById('search-string').value.replace(/'/g, "\\'");
 	 
 	  
@@ -313,10 +365,16 @@
                     from: tableId,
                     where: "semestre= '" + searchString +"'" 
                   }
-                });
-	}
-
-    google.maps.event.addDomListener(window, 'load', initialize);
+       });
+	   
+	   
+	   
+	  
+   }
+   
+   
+   
+   google.maps.event.addDomListener(window, 'load', initialize);
   
  
   
