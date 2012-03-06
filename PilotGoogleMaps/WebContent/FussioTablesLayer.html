@@ -35,6 +35,52 @@
           zoom: 14,
           mapTypeId: google.maps.MapTypeId.ROADMAP
       });
+      
+      
+      var queryText = encodeURIComponent("SELECT geometry FROM 3110406");
+      var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
+      
+      var coordinates = [];
+     
+      query.send(function(response) {
+   	   
+      var numRows = response.getDataTable().getNumberOfRows();
+
+  
+      
+          for(i = 0; i < numRows; i++) {
+             
+        	  var data = response.getDataTable().getValue(i, 0);
+              
+        	  var cvector = data.split(",");
+        	  
+        	  var cx = cvector[0].split("<coordinates>");
+        	  var x = cx[1];
+        	  var y = cvector[1];
+        	  //alert (x + ' '+ y);
+        	  
+        	 
+        	  
+        	  
+              coordinates.push(new google.maps.LatLng(y, x));
+           }
+        
+      
+       var bounds = new google.maps.LatLngBounds();
+      
+     
+       
+       for (var i = 0; i < coordinates.length; i++) {
+           bounds.extend(coordinates[i]);
+       }
+       
+       
+       map.fitBounds(bounds);
+      
+      });
+       
+      
+       
  
       var marker = new google.maps.Marker({
           map: map,
@@ -303,31 +349,7 @@
 	  var empresa = document.getElementById('empresa').value;
 	  
 	  
-	  var queryText = encodeURIComponent("SELECT 'geometry' FROM 3109998");
-      var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
-      
-      var coordinates = [];
-      query.send(function(response) {
-   	   
-          var numRows = response.getDataTable().getNumberOfRows();
-
-          //create the list of lat/long coordinates
-         
-          for(i = 0; i < numRows; i++) {
-             
-               // var lat = response.getDataTable().getValue(i, 0);
-               // var lng = response.getDataTable().getValue(i, 1);
-               var geocoord = response.getDataTable().getValue(i, 0);
-               coordinates.push(geocoord);
-           }
-       }); 
-      
-       var bounds = new google.maps.LatLngBounds();
-      
-       for (var i = 0; i < coordinates.length; i++) {
-           bounds.extend(coordinates[i]);
-       }
-       this.map.fitBounds(bounds); 
+	   
 	  
 	  
 	  
@@ -349,6 +371,50 @@
           
         });
      }
+	  
+	 
+	  var queryText = encodeURIComponent("SELECT geometry, empresa FROM 3110406 WHERE empresa = '"+ empresa +"'");
+      var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
+      
+      var coordinates = [];
+     
+      query.send(function(response) {
+   	   
+      var numRows = response.getDataTable().getNumberOfRows();
+
+  
+      
+          for(i = 0; i < numRows; i++) {
+             
+        	  var data = response.getDataTable().getValue(i, 0);
+              
+        	  var cvector = data.split(",");
+        	  
+        	  var cx = cvector[0].split("<coordinates>");
+        	  var x = cx[1];
+        	  var y = cvector[1];
+        	  
+        	  
+        	 
+        	  
+        	  
+              coordinates.push(new google.maps.LatLng(y, x));
+           }
+        
+      
+       var bounds = new google.maps.LatLngBounds();
+      
+     
+       
+       for (var i = 0; i < coordinates.length; i++) {
+           bounds.extend(coordinates[i]);
+       }
+       
+       
+       map.fitBounds(bounds);
+      
+      });
+	  
 	  
 	  
 	  
@@ -384,7 +450,7 @@
   
        <div id="map_canvas" style="width:90%; height:90%"></div>
        <label>Empresa</label>
-       <select id="empresa" onchange="drawTable();">
+       <select id="empresa">
            <option value="">--Select--</option>
            <option value="REP">REP</option>
            <option value="KLP">KLP</option>
